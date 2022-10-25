@@ -113,57 +113,80 @@ export default class Card extends HTMLElement {
 }
 
 customElements.define('it-card', Card);
-
+import storageService from "./services/StorageService.js";
+import { STORAGE_KEYS } from "./constants/storage.js";
 
 export default class Cart extends HTMLElement {
-    constructor() {
-        super();
-        this.quantity = 0;
-        this.isVisible = false
-        this.data = [];
-    }
+  constructor() {
+    super();
+    this.quantity = 0;
+    this.isVisible = false;
+    this.data = [];
+  }
 
-    onToggleTable(evt) {
-        if (evt.target.closest('.cart-link-icon')) {
-            evt.preventDefault();
-            this.isVisible = !this.isVisible;
-            this.render();
-        }
-    }
+  cartDataAdapter(data) {
+    return data
+      .map((item, _, arr) => {
+        return {
+          ...item,
+          quantity: arr.filter((subItem) => subItem.id === item.id).length,
+        };
+      })
+      .filter(
+        (item, index, arr) =>
+          arr.findIndex((finditem) => finditem.id === item.id) === index
+      );
+  }
 
-    onDeleteItem(evt) {
-        if (evt.target.closest('.btn')) {
-            const productId = Number(evt.target.dataset.productId);
-            this.data = this.data.filter((item) => item.id !== productId);
-            this.render()
-        }
-    }
+  initializeData() {
+    const data = storageService.getItem(STORAGE_KEYS.cartData);
+    this.data = data ? this.cartDataAdapter(data) : [];
+    this.quantity = data?.length ?? 0;
+  }
 
-    onClick(evt) {
-        this.onToggleTable(evt);
-        this.onDeleteItem(evt);
+  onToggleTable(evt) {
+    if (evt.target.closest(".cart-link-icon")) {
+      evt.preventDefault();
+      this.isVisible = !this.isVisible;
+      this.render();
     }
+  }
 
-    watchOnData() {
-        window.addEventListener('share-data', (evt) => {
-            this.data.push(evt.detail);
-            this.quantity = this.quantity + 1;
-            this.render()
-        })
+  onDeleteItem(evt) {
+    if (evt.target.closest(".btn")) {
+      const productId = Number(evt.target.dataset.productId);
+      this.data = this.data.filter((item) => item.id !== productId);
+      this.quantity = this.quantity - 1;
+      this.render();
     }
+  }
 
-    connectedCallback() {
-        this.render();
-        this.addEventListener('click', this.onClick);
-        this.watchOnData()
-    }
+  onClick(evt) {
+    this.onToggleTable(evt);
+    this.onDeleteItem(evt);
+  }
 
-    disconnectedCallback() {
-        this.removeEventListener('click', this.onClick)
-    }
+  watchOnData() {
+    window.addEventListener("storage", (evt) => {
+      this.data = this.cartDataAdapter(evt.detail.value);
+      this.quantity = this.quantity + 1;
+      this.render();
+    });
+  }
 
-    render() {
-        this.innerHTML = `
+  connectedCallback() {
+    this.initializeData();
+    this.addEventListener("click", this.onClick);
+    this.watchOnData();
+    this.render();
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener("click", this.onClick);
+  }
+
+  render() {
+    this.innerHTML = `
         <a href='#' class="position-relative cart-link-icon">
             <img src='./images/cart.svg' width='50' height='50' class='cart-icon'/>
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -171,7 +194,9 @@ export default class Cart extends HTMLElement {
             </span>
         </a>
 
-        ${this.isVisible ? `
+        ${
+          this.isVisible
+            ? `
             <table class="table mt-3">
                 <thead>
                     <tr>
@@ -184,9 +209,12 @@ export default class Cart extends HTMLElement {
                     </tr>
                 </thead>
                 <tbody>
-                ${this.data.length ? `
-                    ${this.data.map((item) => {
-            return `
+                ${
+                  this.data.length
+                    ? `
+                    ${this.data
+                      .map((item) => {
+                        return `
                             <tr>
                                 <th>${item.id}</th>
                                 <td>${item.title}</td>
@@ -198,22 +226,27 @@ export default class Cart extends HTMLElement {
                                     <button data-product-id="${item.id}" class='btn btn-danger'>Delete</button>
                                 </td>
                             </tr>
-                      `
-        })
-                    }
-                `: `
+                      `;
+                      })
+                      .join(" ")}
+                `
+                    : `
                     <tr>
                         <td>No Data</td>
                     </tr>
-                `}
+                `
+                }
                 </tbody>
             </table>
-        `: ''}
+        `
+            : ""
+        }
     `;
-    }
+  }
 }
 
-customElements.define('it-cart', Cart)
+customElements.define("it-cart", Cart);
+
 
 
 class StorageService {
