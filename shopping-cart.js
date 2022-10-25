@@ -78,6 +78,8 @@ customElements.define('it-app', App)
 
 
 
+import storageService from "./services/StorageService.js";
+
 export default class Card extends HTMLElement {
     constructor() {
         super();
@@ -86,8 +88,7 @@ export default class Card extends HTMLElement {
 
     onClick(evt) {
         if (evt.target.closest('.btn')) {
-            const event = new CustomEvent('share-data', { bubbles: true, detail: this.data });
-            this.dispatchEvent(event)
+            storageService.setItem('cart-data', [this.data])
         }
     }
 
@@ -99,21 +100,19 @@ export default class Card extends HTMLElement {
     render() {
         this.innerHTML = `
             <div class="card" style="width: 18rem;">
-            <img src="${this.data.preview}" class="card-img-top" alt="${this.data.title}">
-            <div class="card-body">
-                <h5 class="card-title">${this.data.title}</h5>
-                <p class="card-text">${this.data.description}</p>
-                <p><strong>${this.data.price}$</strong></p>
-                <button href="#" class="btn btn-primary">Add to cart</button>
-            </div>
+                <img src="${this.data.preview}" class="card-img-top" alt="${this.data.title}">
+                <div class="card-body">
+                    <h5 class="card-title">${this.data.title}</h5>
+                    <p class="card-text">${this.data.description}</p>
+                    <p><strong>${this.data.price}$</strong></p>
+                    <button href="#" class="btn btn-primary">Add to cart</button>
+                </div>
             </div>
       `;
     }
 }
 
 customElements.define('it-card', Card);
-
-
 
 
 export default class Cart extends HTMLElement {
@@ -215,3 +214,57 @@ export default class Cart extends HTMLElement {
 }
 
 customElements.define('it-cart', Cart)
+
+
+class StorageService {
+  constructor() {
+    this.storage = window.localStorage;
+  }
+
+  dispatchEvent(key) {
+    const event = new CustomEvent("storage", {
+      detail: key ? { key, value: this.getItem(key) } : null,
+      bubbles: true,
+    });
+    window.dispatchEvent(event);
+  }
+
+  getItem(key) {
+    try {
+      return JSON.parse(this.storage.getItem(key));
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  setItem(key, value) {
+    try {
+    const existedValue = this.getItem(key);
+      if (existedValue) {
+        if(Array.isArray(existedValue)) {
+            this.storage.setItem(key, JSON.stringify([...value, ...existedValue]));
+        }
+      } else {
+        this.storage.setItem(key, JSON.stringify(value));
+      }
+
+      this.dispatchEvent(key);
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  removeItem(key) {
+    this.storage.removeItem(key);
+    this.dispatchEvent(key);
+  }
+
+  clear() {
+    this.storage.clear();
+    this.dispatchEvent();
+  }
+}
+
+const storageService = new StorageService();
+export default storageService;
+
