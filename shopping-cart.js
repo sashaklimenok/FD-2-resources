@@ -80,25 +80,29 @@ customElements.define('it-app', App)
 
 import storageService from "./services/StorageService.js";
 
+import { STORAGE_KEYS } from "./constants/storage.js";
+import storageService from "./services/StorageService.js";
+
 export default class Card extends HTMLElement {
-    constructor() {
-        super();
-        this.data = JSON.parse(this.getAttribute('data'));
-    }
+  constructor() {
+    super();
+    this.data = JSON.parse(this.getAttribute("data"));
+  }
 
-    onClick(evt) {
-        if (evt.target.closest('.btn')) {
-            storageService.setItem('cart-data', [this.data])
-        }
+  onClick(evt) {
+    if (evt.target.closest(".btn")) {
+      const data = storageService.getItem(STORAGE_KEYS.cartData) ?? [];
+      storageService.setItem(STORAGE_KEYS.cartData, [...data, this.data]);
     }
+  }
 
-    connectedCallback() {
-        this.render();
-        this.addEventListener('click', this.onClick);
-    }
+  connectedCallback() {
+    this.render();
+    this.addEventListener("click", this.onClick);
+  }
 
-    render() {
-        this.innerHTML = `
+  render() {
+    this.innerHTML = `
             <div class="card" style="width: 18rem;">
                 <img src="${this.data.preview}" class="card-img-top" alt="${this.data.title}">
                 <div class="card-body">
@@ -109,10 +113,14 @@ export default class Card extends HTMLElement {
                 </div>
             </div>
       `;
-    }
+  }
 }
 
-customElements.define('it-card', Card);
+customElements.define("it-card", Card);
+
+
+
+
 import storageService from "./services/StorageService.js";
 import { STORAGE_KEYS } from "./constants/storage.js";
 
@@ -272,15 +280,7 @@ class StorageService {
 
   setItem(key, value) {
     try {
-    const existedValue = this.getItem(key);
-      if (existedValue) {
-        if(Array.isArray(existedValue)) {
-            this.storage.setItem(key, JSON.stringify([...value, ...existedValue]));
-        }
-      } else {
-        this.storage.setItem(key, JSON.stringify(value));
-      }
-
+      this.storage.setItem(key, JSON.stringify(value));
       this.dispatchEvent(key);
     } catch (error) {
       console.error(error.message);
@@ -300,4 +300,5 @@ class StorageService {
 
 const storageService = new StorageService();
 export default storageService;
+
 
