@@ -133,23 +133,31 @@ export default class Cart extends HTMLElement {
   }
 
   cartDataAdapter(data) {
-    return data
+    const cartData = data
       .map((item, _, arr) => {
         return {
           ...item,
-          quantity: arr.filter((subItem) => subItem.id === item.id).length,
+          quantity: item.quantity
+            ? item.quantity
+            : arr.filter((subItem) => subItem.id === item.id).length,
         };
       })
       .filter(
         (item, index, arr) =>
           arr.findIndex((finditem) => finditem.id === item.id) === index
       );
+
+    this.quantity = cartData.reduce(
+      (acc, current) => (acc += current.quantity),
+      0
+    );
+
+    return cartData;
   }
 
   initializeData() {
     const data = storageService.getItem(STORAGE_KEYS.cartData);
     this.data = data ? this.cartDataAdapter(data) : [];
-    this.quantity = data?.length ?? 0;
   }
 
   onToggleTable(evt) {
@@ -163,8 +171,19 @@ export default class Cart extends HTMLElement {
   onDeleteItem(evt) {
     if (evt.target.closest(".btn")) {
       const productId = Number(evt.target.dataset.productId);
-      this.data = this.data.filter((item) => item.id !== productId);
-      this.quantity = this.quantity - 1;
+      const updatedData = this.data
+        .map((item) => {
+          if (item.id === productId) {
+            return {
+              ...item,
+              quantity: item.quantity - 1,
+            };
+          }
+          return item;
+        })
+        .filter((item) => Boolean(item.quantity));
+
+      storageService.setItem(STORAGE_KEYS.cartData, updatedData);
       this.render();
     }
   }
@@ -177,7 +196,6 @@ export default class Cart extends HTMLElement {
   watchOnData() {
     window.addEventListener("storage", (evt) => {
       this.data = this.cartDataAdapter(evt.detail.value);
-      this.quantity = this.quantity + 1;
       this.render();
     });
   }
@@ -201,7 +219,6 @@ export default class Cart extends HTMLElement {
                ${this.quantity}
             </span>
         </a>
-
         ${
           this.isVisible
             ? `
@@ -254,6 +271,7 @@ export default class Cart extends HTMLElement {
 }
 
 customElements.define("it-cart", Cart);
+
 
 
 
