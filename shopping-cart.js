@@ -1,52 +1,122 @@
-import './Card.js'
-import './Cart.js'
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+
+  <it-app></it-app>
+
+  <script src="./App.js" type="module"></script>
+</body>
+
+</html>
+
+
+export const STORAGE_KEYS = {
+  cartData: "cart-data",
+};
+
+class StorageService {
+  constructor() {
+    this.storage = window.localStorage;
+  }
+
+  dispatchEvent(key) {
+    const event = new CustomEvent("storage", {
+      detail: key ? { key, value: this.getItem(key) } : null,
+      bubbles: true,
+    });
+    window.dispatchEvent(event);
+  }
+
+  getItem(key) {
+    try {
+      return JSON.parse(this.storage.getItem(key));
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  setItem(key, value) {
+    try {
+      this.storage.setItem(key, JSON.stringify(value));
+      this.dispatchEvent(key);
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  removeItem(key) {
+    this.storage.removeItem(key);
+    this.dispatchEvent(key);
+  }
+
+  clear() {
+    this.storage.clear();
+    this.dispatchEvent();
+  }
+}
+
+const storageService = new StorageService();
+export default storageService;
+
+
+import "./Card.js";
+import "./Cart.js";
 
 class App extends HTMLElement {
-    constructor() {
-        super();
-        this.data = [
-            {
-                id: 1,
-                title: "Product #1",
-                preview: "./images/data.webp",
-                description:
-                    "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
-                price: 200,
-            },
-            {
-                id: 2,
-                title: "Product #2",
-                preview: "./images/data.webp",
-                description:
-                    "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
-                price: 210,
-            },
-            {
-                id: 3,
-                title: "Product #3",
-                preview: "./images/data.webp",
-                description:
-                    "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
-                price: 230,
-            },
-            {
-                id: 4,
-                title: "Product #4",
-                preview: "./images/data.webp",
-                description:
-                    "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
-                price: 240,
-            },
-        ];
-    }
+  constructor() {
+    super();
+    this.data = [
+      {
+        id: 1,
+        title: "Product #1",
+        preview: "./images/data.webp",
+        description:
+          "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
+        price: 200,
+      },
+      {
+        id: 2,
+        title: "Product #2",
+        preview: "./images/data.webp",
+        description:
+          "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
+        price: 210,
+      },
+      {
+        id: 3,
+        title: "Product #3",
+        preview: "./images/data.webp",
+        description:
+          "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
+        price: 230,
+      },
+      {
+        id: 4,
+        title: "Product #4",
+        preview: "./images/data.webp",
+        description:
+          "Redmi 10C оснащен производительным 8-ядерным процессором Snapdragon 680, построенном на флагманском 6-нм",
+        price: 240,
+      },
+    ];
+  }
 
-    connectedCallback() {
-        this.render()
-    }
+  connectedCallback() {
+    this.render();
+  }
 
-
-    render() {
-        this.innerHTML = `
+  render() {
+    this.innerHTML = `
         <div class='container mt-5 mb-5'>
             <div class='col-12'>
                 <it-cart></it-cart>
@@ -54,31 +124,23 @@ class App extends HTMLElement {
         </div>
         <div class="container">
             <div class="row">
-                ${this.data.map((item) => {
+                ${this.data
+                  .map((item) => {
                     return `
                         <div class="col mt-5">
                             <it-card data='${JSON.stringify(item)}'></it-card>
                         </div>
-                    `
-                }).join(' ')}
+                    `;
+                  })
+                  .join(" ")}
             </div>
         </div>
-        `
-    }
+        `;
+  }
 }
 
-customElements.define('it-app', App)
+customElements.define("it-app", App);
 
-
-
-
-
-
-
-
-
-
-import storageService from "./services/StorageService.js";
 
 import { STORAGE_KEYS } from "./constants/storage.js";
 import storageService from "./services/StorageService.js";
@@ -117,9 +179,6 @@ export default class Card extends HTMLElement {
 }
 
 customElements.define("it-card", Card);
-
-
-
 
 import storageService from "./services/StorageService.js";
 import { STORAGE_KEYS } from "./constants/storage.js";
@@ -272,51 +331,5 @@ export default class Cart extends HTMLElement {
 
 customElements.define("it-cart", Cart);
 
-
-
-
-class StorageService {
-  constructor() {
-    this.storage = window.localStorage;
-  }
-
-  dispatchEvent(key) {
-    const event = new CustomEvent("storage", {
-      detail: key ? { key, value: this.getItem(key) } : null,
-      bubbles: true,
-    });
-    window.dispatchEvent(event);
-  }
-
-  getItem(key) {
-    try {
-      return JSON.parse(this.storage.getItem(key));
-    } catch (error) {
-      console.error(error.message);
-    }
-  }
-
-  setItem(key, value) {
-    try {
-      this.storage.setItem(key, JSON.stringify(value));
-      this.dispatchEvent(key);
-    } catch (error) {
-      console.error(error.message);
-    }
-  }
-
-  removeItem(key) {
-    this.storage.removeItem(key);
-    this.dispatchEvent(key);
-  }
-
-  clear() {
-    this.storage.clear();
-    this.dispatchEvent();
-  }
-}
-
-const storageService = new StorageService();
-export default storageService;
 
 
